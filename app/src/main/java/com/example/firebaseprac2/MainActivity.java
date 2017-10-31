@@ -16,6 +16,8 @@ import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.iid.FirebaseInstanceId;
 
 import java.util.regex.Matcher;
@@ -26,6 +28,8 @@ public class MainActivity extends AppCompatActivity {
     private FirebaseAuth mAuth;
     Button btnSignIn, btnSignUp;
     EditText editEmailforSignUp, editEmailforSignIn, editPWforSignUp, editPWforSignIn;
+    FirebaseDatabase database;
+    DatabaseReference userRef;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -33,12 +37,14 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         mAuth = FirebaseAuth.getInstance();
-
+        database = FirebaseDatabase.getInstance();
+        userRef = database.getReference("message");
         initView();
         setListner();
 
         String refreshedToken = FirebaseInstanceId.getInstance().getToken();
-        Log.d("MSG", "token=" + refreshedToken);
+        String getID = FirebaseInstanceId.getInstance().getId();
+        Log.d("MSG", "!!!token=" + getID);
     }
 
     @Override
@@ -94,6 +100,9 @@ public class MainActivity extends AppCompatActivity {
                                     Toast.makeText(MainActivity.this, "이메일을 발송하였습니다", Toast.LENGTH_SHORT).show();
                                 }
                             });
+                            String refreshedToken = FirebaseInstanceId.getInstance().getToken();
+
+                            userRef.child(user.getUid()).setValue(refreshedToken);
                         } else {
                             Toast.makeText(MainActivity.this, "Authentification failed",
                                     Toast.LENGTH_SHORT).show();
