@@ -12,6 +12,8 @@ import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.View;
+import android.widget.Button;
+import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -29,6 +31,14 @@ import com.google.firebase.storage.UploadTask;
 import java.io.File;
 import java.util.ArrayList;
 
+import okhttp3.MediaType;
+import okhttp3.RequestBody;
+import okhttp3.ResponseBody;
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
+import retrofit2.Retrofit;
+
 public class StorageActivity extends AppCompatActivity implements RecyclerViewAdapter.TransferId {
     private StorageReference mStorageRef;
     RecyclerView recyclerView;
@@ -36,6 +46,8 @@ public class StorageActivity extends AppCompatActivity implements RecyclerViewAd
     TextView tvUserId, tvToken;
     FirebaseDatabase database;
     DatabaseReference userRef;
+    EditText editMsg;
+    Button btnSend;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -46,6 +58,60 @@ public class StorageActivity extends AppCompatActivity implements RecyclerViewAd
         setDatabase();
         getDataFromDB();
         mStorageRef = FirebaseStorage.getInstance().getReference();
+        btnSend.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                send();
+            }
+        });
+    }
+
+    public void send(){
+        String token = tvToken.getText().toString();
+        String msg = editMsg.getText().toString();
+
+        if(token == null || "".equals(token)){
+            Toast.makeText(this, "받는 사람을 선택하세요", Toast.LENGTH_SHORT).show();
+            return;
+        }if(msg==null || "".equals(msg)){
+            Toast.makeText(this, "메세지 입력", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        //Retrofit 스레드 + Httpconnection
+        //네트워킹 하는 툴
+        String json = "{\"to\":\"" + token + "\", \"msg\":\""+msg + "\"}";
+
+        // 레트로핏 선언
+        Retrofit retrofit = new Retrofit.Builder()
+                .baseUrl("http://192.168.0.138:8090/")
+                .build();
+        // 인터페이스와 결합
+        IRetro service = retrofit.create(IRetro.class);
+         RequestBody body = RequestBody.create(MediaType.parse("text/plain"), json); //body에 들어갈 타입을 설정해준다.
+
+        Call<ResponseBody> remote = service.sendNotification(body);
+
+        remote.enqueue(new Callback<ResponseBody>() {
+            @Override
+            public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
+                if(response.isSuccessful()){
+                    ResponseBody resultdata = response.body();
+
+                    try {
+                        Toast.makeText(StorageActivity.this, resultdata.toString(), Toast.LENGTH_SHORT).show();
+                        Toast.makeText(StorageActivity.this, response.message(), Toast.LENGTH_SHORT).show();
+                        Log.d("확인", resultdata.toString()); //okhttp3.ResponseBody$1@c555988라고 뜸
+                    }catch(Exception e){
+                        e.printStackTrace();
+                    }
+                }
+            }
+
+            @Override
+            public void onFailure(Call<ResponseBody> call, Throwable t) {
+                Log.e("Retro", t.getMessage());
+            }
+        });
     }
 
     @Override
@@ -65,11 +131,11 @@ public class StorageActivity extends AppCompatActivity implements RecyclerViewAd
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
                 for(DataSnapshot snapshot : dataSnapshot.getChildren()){
-                    //User user = snapshot.getValue(User.class);
-                    String userID = snapshot.getKey();
-                    Log.d("======", userID);
-                    String token = snapshot.getValue().toString();
-                    list.add(new User(userID, token));
+                    User user = snapshot.getValue(User.class);
+                    //String userID = snapshot.getKey();
+                    //Log.d("======", userID);
+                    //String token = snapshot.getValue().toString();
+                    list.add(user);
                 }
                 adapter.refreshList(list);
             }
@@ -86,6 +152,8 @@ public class StorageActivity extends AppCompatActivity implements RecyclerViewAd
         recyclerView = (RecyclerView) findViewById(R.id.recyclerView);
         tvUserId = (TextView) findViewById(R.id.tvUserId);
         tvToken = (TextView) findViewById(R.id.tvToken);
+        editMsg = (EditText) findViewById(R.id.editMsg);
+        btnSend = (Button) findViewById(R.id.btnSend);
     }
 
     public void setRecyclerView(){

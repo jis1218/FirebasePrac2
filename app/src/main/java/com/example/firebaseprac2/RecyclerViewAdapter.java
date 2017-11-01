@@ -41,7 +41,7 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
 
     @Override
     public void onBindViewHolder(MyViewHolder holder, int position) {
-        holder.textView.setText(list.get(position).userID);
+        holder.textView.setText(list.get(position).email);
         holder.current_id = list.get(position).userID;
         holder.token = list.get(position).token;
 

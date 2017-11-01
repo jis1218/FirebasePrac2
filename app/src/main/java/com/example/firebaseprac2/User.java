@@ -7,12 +7,14 @@ package com.example.firebaseprac2;
 public class User {
     String userID;
     String token;
+    String email;
 
     public User(){
 
     }
 
-    public User(String userID, String token) {
+    public User(String userID, String token, String email) {
+        this.email = email;
         this.userID = userID;
         this.token = token;
     }

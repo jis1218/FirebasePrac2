@@ -101,8 +101,8 @@ public class MainActivity extends AppCompatActivity {
                                 }
                             });
                             String refreshedToken = FirebaseInstanceId.getInstance().getToken();
-
-                            userRef.child(user.getUid()).setValue(refreshedToken);
+                            User data = new User(user.getUid(), refreshedToken, user.getEmail());
+                            userRef.child(user.getUid()).setValue(data);
                         } else {
                             Toast.makeText(MainActivity.this, "Authentification failed",
                                     Toast.LENGTH_SHORT).show();
